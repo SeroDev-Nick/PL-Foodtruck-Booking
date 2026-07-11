@@ -1,8 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --page-bg: #f8fafc;
+  --page-fg: #0f172a;
+  --page-muted: #475569;
+  --control-bg: #ffffff;
+  --control-bg-hover: #f1f5f9;
+  --control-border: #cbd5e1;
+  --focus-ring: #0f766e;
+  --error-bg: #fef2f2;
+  --error-fg: #991b1b;
+  --error-border: #fca5a5;
+
+  /* Day states — Open */
+  --day-open-bg: #f4f4f5;
+  --day-open-fg: #18181b;
+  --day-open-border: #d4d4d8;
+
+  /* Day states — Recommended */
+  --day-recommended-bg: #ccfbf1;
+  --day-recommended-fg: #134e4a;
+  --day-recommended-border: #0f766e;
+
+  /* Day states — Same Category */
+  --day-same-bg: #fef3c7;
+  --day-same-fg: #78350f;
+  --day-same-border: #b45309;
+
+  /* Day states — Full */
+  --day-full-bg: #3f3f46;
+  --day-full-fg: #fafafa;
+  --day-full-border: #27272a;
 }
 
 @theme inline {
@@ -12,15 +42,50 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--page-bg);
+  color: var(--page-fg);
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.day-cell {
+  transition: box-shadow 0.15s ease;
+}
+
+.day-cell:focus {
+  outline: none;
+}
+
+.day-cell:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+.day-cell--open {
+  background: var(--day-open-bg);
+  color: var(--day-open-fg);
+  border-color: var(--day-open-border);
+}
+
+.day-cell--recommended {
+  background: var(--day-recommended-bg);
+  color: var(--day-recommended-fg);
+  border-color: var(--day-recommended-border);
+}
+
+.day-cell--same_category {
+  background: var(--day-same-bg);
+  color: var(--day-same-fg);
+  border-color: var(--day-same-border);
+}
+
+.day-cell--full {
+  background: var(--day-full-bg);
+  color: var(--day-full-fg);
+  border-color: var(--day-full-border);
+}
+
+.day-cell__tag {
+  display: block;
 }
