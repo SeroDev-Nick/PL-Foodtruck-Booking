@@ -55,7 +55,7 @@ export function RegisterTruckForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+    <form onSubmit={onSubmit} className="flex flex-col gap-5">
       <label className={labelClassName}>
         Business name
         <input
@@ -77,7 +77,10 @@ export function RegisterTruckForm() {
           name="contactEmail"
           required
           autoComplete="email"
+          inputMode="email"
           maxLength={254}
+          pattern="[^\s@]+@[^\s@]+\.[A-Za-z]{2,}"
+          title="Enter an email like name@example.com"
           disabled={isPending}
         />
       </label>
@@ -90,6 +93,8 @@ export function RegisterTruckForm() {
           name="phoneNumber"
           required
           autoComplete="tel"
+          inputMode="tel"
+          placeholder="(555) 123-4567"
           maxLength={30}
           disabled={isPending}
         />

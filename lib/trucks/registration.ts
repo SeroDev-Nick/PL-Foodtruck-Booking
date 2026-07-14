@@ -21,6 +21,14 @@ const MIME_BY_FILE_TYPE_ID: Record<string, AllowedCoiMimeType> = {
   webp: "image/webp",
 };
 
+/** Requires local@domain.tld with a real TLD (not just "a@b"). */
+const EMAIL_WITH_TLD =
+  /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+
+function digitCount(value: string): number {
+  return (value.match(/\d/g) ?? []).length;
+}
+
 export const truckRegistrationFieldsSchema = z.object({
   businessName: z
     .string()
@@ -30,13 +38,21 @@ export const truckRegistrationFieldsSchema = z.object({
   contactEmail: z
     .string()
     .trim()
+    .max(254, "Email is too long.")
     .email("Enter a valid email address.")
-    .max(254, "Email is too long."),
+    .refine(
+      (value) => EMAIL_WITH_TLD.test(value),
+      "Enter a valid email address (include @ and a domain like example.com).",
+    ),
   phoneNumber: z
     .string()
     .trim()
-    .min(7, "Enter a valid phone number.")
-    .max(30, "Phone number is too long."),
+    .min(1, "Phone number is required.")
+    .max(30, "Phone number is too long.")
+    .refine(
+      (value) => digitCount(value) === 10,
+      "Enter a 10-digit phone number (dashes, spaces, or parentheses are fine).",
+    ),
   coiExpirationDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid expiration date.")
