@@ -95,6 +95,7 @@ body {
   background: var(--day-unavailable-bg);
   color: var(--day-unavailable-fg);
   border-color: var(--day-unavailable-border);
+  opacity: 0.45;
 }
 
 .day-cell--selected {

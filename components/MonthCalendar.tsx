@@ -288,11 +288,7 @@ export function MonthCalendar({
                     <span className="text-sm font-semibold leading-none sm:text-base">
                       {format(day, "d")}
                     </span>
-                    {isUnavailable ? (
-                      <span className="day-cell__tag break-words text-[0.6rem] leading-tight font-medium sm:text-xs">
-                        Unavailable
-                      </span>
-                    ) : state !== "open" ? (
+                    {!isUnavailable && state !== "open" ? (
                       <span className="day-cell__tag break-words text-[0.6rem] leading-tight font-medium sm:text-xs">
                         <span className="sm:hidden">{STATE_TAG_MOBILE[state]}</span>
                         <span className="hidden sm:inline">
