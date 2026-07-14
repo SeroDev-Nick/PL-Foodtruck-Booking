@@ -33,11 +33,23 @@ async function classifyTruckIneligibility(
   admin: ReturnType<typeof createAdminClient>,
   truckId: string,
 ): Promise<BookingDayFailureReason> {
-  const { data: truck } = await admin
+  console.error("[submitBookings] classifyTruckIneligibility query", {
+    client: "service_role admin (createAdminClient)",
+    table: "trucks",
+    select: "manager_approved, coi_expiration_date",
+    filter: { id: truckId },
+  });
+
+  const { data: truck, error } = await admin
     .from("trucks")
     .select("manager_approved, coi_expiration_date")
     .eq("id", truckId)
     .maybeSingle();
+
+  console.error("[submitBookings] classifyTruckIneligibility raw result", {
+    truck,
+    error,
+  });
 
   if (!truck) {
     return "truck_ineligible";
@@ -58,6 +70,11 @@ async function classifyTruckIneligibility(
   if (expiration < todayIso) {
     return "coi_expired";
   }
+
+  console.error(
+    "[submitBookings] classifyTruckIneligibility fallback truck_ineligible",
+    { expiration, todayIso, manager_approved: truck.manager_approved },
+  );
 
   return "truck_ineligible";
 }
@@ -104,14 +121,33 @@ export async function submitBookings(
   // CRITICAL: one insert per day — never a multi-row array insert — so a
   // 2-per-day trigger failure on one date cannot roll back other valid days.
   for (const day of days) {
-    const { data: bookableTruck } = await admin
+    console.error("[submitBookings] bookable_trucks eligibility check", {
+      client: "service_role admin (createAdminClient)",
+      view: "bookable_trucks",
+      select: "id",
+      filter: { id: truckId },
+      bookingDate: day.date,
+    });
+
+    const { data: bookableTruck, error: bookableError } = await admin
       .from("bookable_trucks")
       .select("id")
       .eq("id", truckId)
       .maybeSingle();
 
+    console.error("[submitBookings] bookable_trucks raw result", {
+      bookableTruck,
+      bookableError,
+      truckId,
+    });
+
     if (!bookableTruck) {
       const reason = await classifyTruckIneligibility(admin, truckId);
+      console.error("[submitBookings] treated as ineligible", {
+        truckId,
+        bookingDate: day.date,
+        reason,
+      });
       failures.push({ date: day.date, reason });
       continue;
     }

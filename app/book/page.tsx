@@ -478,6 +478,7 @@ function BookPageContent() {
                         Start (apply to all)
                         <input
                           type="time"
+                          step={900}
                           className={fieldClassName}
                           value={applyStart}
                           onChange={(event) => setApplyStart(event.target.value)}
@@ -487,6 +488,7 @@ function BookPageContent() {
                         End (apply to all)
                         <input
                           type="time"
+                          step={900}
                           className={fieldClassName}
                           value={applyEnd}
                           onChange={(event) => setApplyEnd(event.target.value)}
@@ -517,6 +519,7 @@ function BookPageContent() {
                                 <span className="sr-only">Start time for {dateKey}</span>
                                 <input
                                   type="time"
+                                  step={900}
                                   className={fieldClassName}
                                   value={times.startTime}
                                   onChange={(event) =>
@@ -529,6 +532,7 @@ function BookPageContent() {
                                 <span className="sr-only">End time for {dateKey}</span>
                                 <input
                                   type="time"
+                                  step={900}
                                   className={fieldClassName}
                                   value={times.endTime}
                                   onChange={(event) =>
