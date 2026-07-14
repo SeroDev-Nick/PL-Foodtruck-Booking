@@ -243,6 +243,7 @@ function BookPageContent() {
         bookingsByDate[key] = [];
       }
       bookingsByDate[key].push({
+        id: row.id,
         category: row.category,
         truckId: row.truck_id,
         businessName: row.truck_id ? (nameById.get(row.truck_id) ?? null) : null,
@@ -318,6 +319,11 @@ function BookPageContent() {
   }, [step, trucks, category]);
 
   function toggleDate(dateKey: string) {
+    const todayKey = format(new Date(), "yyyy-MM-dd");
+    if (dateKey <= todayKey) {
+      return;
+    }
+
     const next = { ...selectedDays };
     if (next[dateKey]) {
       delete next[dateKey];

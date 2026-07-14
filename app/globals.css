@@ -33,6 +33,11 @@
   --day-full-bg: #3f3f46;
   --day-full-fg: #fafafa;
   --day-full-border: #27272a;
+
+  /* Day states — Past / today (non-selectable) */
+  --day-unavailable-bg: #e4e4e7;
+  --day-unavailable-fg: #52525b;
+  --day-unavailable-border: #a1a1aa;
 }
 
 @theme inline {
@@ -84,6 +89,12 @@ body {
   background: var(--day-full-bg);
   color: var(--day-full-fg);
   border-color: var(--day-full-border);
+}
+
+.day-cell--unavailable {
+  background: var(--day-unavailable-bg);
+  color: var(--day-unavailable-fg);
+  border-color: var(--day-unavailable-border);
 }
 
 .day-cell--selected {

@@ -32,6 +32,7 @@ export type BookingSubmission = z.infer<typeof bookingSubmissionSchema>;
 
 export type BookingDayFailureReason =
   | "day_full"
+  | "already_booked_same_truck"
   | "coi_expired"
   | "awaiting_approval"
   | "truck_ineligible"

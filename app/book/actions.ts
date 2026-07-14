@@ -178,7 +178,19 @@ export async function submitBookings(
 
     if (insertError) {
       const message = insertError.message.toLowerCase();
-      if (message.includes("maximum 2 bookings") || message.includes("daily")) {
+      const isSameTruckDuplicate =
+        insertError.code === "23505" ||
+        message.includes("bookings_booking_date_truck_id_key") ||
+        (message.includes("duplicate key") &&
+          message.includes("booking_date") &&
+          message.includes("truck_id"));
+
+      if (isSameTruckDuplicate) {
+        failures.push({ date: day.date, reason: "already_booked_same_truck" });
+      } else if (
+        message.includes("maximum 2 bookings") ||
+        message.includes("daily")
+      ) {
         failures.push({ date: day.date, reason: "day_full" });
       } else {
         failures.push({ date: day.date, reason: "insert_failed" });

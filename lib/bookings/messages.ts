@@ -15,6 +15,8 @@ export function failureMessageForDay(failure: BookingDayFailure): string {
   switch (failure.reason) {
     case "day_full":
       return `${label} just became fully booked by another truck. Your other selected days were booked successfully — please choose a different day for ${label}.`;
+    case "already_booked_same_truck":
+      return `You're already booked for ${label}.`;
     case "coi_expired":
       return `Your COI on file has expired, so ${label} could not be booked. Contact the manager about renewing your COI.`;
     case "awaiting_approval":
