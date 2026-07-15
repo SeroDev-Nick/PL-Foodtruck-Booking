@@ -105,3 +105,30 @@ body {
 .day-cell__tag {
   display: block;
 }
+
+.plan-ahead-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0.65rem;
+}
+
+.plan-ahead-dot {
+  display: block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+}
+
+.plan-ahead-dot--recommended {
+  background: var(--day-recommended-border);
+}
+
+.plan-ahead-dot--same_category {
+  background: var(--day-same-border);
+}
+
+.plan-ahead-dot--full {
+  background: var(--day-full-bg);
+}
