@@ -232,21 +232,9 @@ function BookPageContent() {
     setTab(next);
     if (next === "thisMonth") {
       setThisMonthLoad({ status: "loading" });
-      if (modalMonth) {
-        console.error("[PlanAheadModal] close applied", {
-          reason: "select_tab_this_month",
-          previousMonth: format(modalMonth, "yyyy-MM"),
-        });
-      }
       setModalMonth(null);
     } else {
       setPlanAheadLoad({ status: "loading" });
-      if (modalMonth) {
-        console.error("[PlanAheadModal] close applied", {
-          reason: "select_tab_plan_ahead_reset",
-          previousMonth: format(modalMonth, "yyyy-MM"),
-        });
-      }
       setModalMonth(null);
     }
   }
@@ -254,13 +242,6 @@ function BookPageContent() {
   function selectYearMode(next: PlanAheadYearMode) {
     setYearMode(next);
     setPlanAheadLoad({ status: "loading" });
-    if (modalMonth) {
-      console.error("[PlanAheadModal] close applied", {
-        reason: "select_year_mode",
-        previousMonth: modalMonth ? format(modalMonth, "yyyy-MM") : null,
-        nextYearMode: next,
-      });
-    }
     setModalMonth(null);
   }
 
@@ -280,7 +261,6 @@ function BookPageContent() {
     console.error("[PlanAheadModal] open requested", {
       reason: "tile_click",
       month: format(month, "yyyy-MM"),
-      openerTag: opener.tagName,
     });
     returnFocusRef.current = opener;
     setModalMonth(month);

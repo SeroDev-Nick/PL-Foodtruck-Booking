@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import FocusTrap from "focus-trap-react";
-import { useId, useRef } from "react";
+import { useId, useRef, type KeyboardEvent } from "react";
 import { BookingFlow } from "@/components/BookingFlow";
 import type { BookingCategory } from "@/lib/categories";
 import type { DayBooking } from "@/lib/calendar/day-state";
@@ -42,33 +42,34 @@ export function MonthBookingModal({
     return null;
   }
 
+  function onDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      onClose("escape_key");
+    }
+  }
+
   return (
     <div className="plan-ahead-modal-root fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div
         className="absolute inset-0 bg-black/40"
         aria-hidden="true"
-        onClick={() => {
-          console.error("[PlanAheadModal] close requested", {
-            reason: "backdrop_click",
-            month: format(month, "yyyy-MM"),
-          });
-          onClose("backdrop_click");
-        }}
+        onClick={() => onClose("backdrop_click")}
       />
+      {/*
+        Do NOT wire onDeactivate → onClose. focus-trap-react documents that in
+        React Strict Mode the trap deactivates on the immediate remount cycle;
+        using onDeactivate to update React open-state closes the modal instantly.
+        Escape and outside clicks are handled explicitly below instead.
+      */}
       <FocusTrap
         focusTrapOptions={{
           initialFocus: () => headingRef.current,
-          escapeDeactivates: true,
+          escapeDeactivates: false,
+          clickOutsideDeactivates: false,
           allowOutsideClick: true,
-          onDeactivate: () => {
-            console.error("[PlanAheadModal] close requested", {
-              reason: "focus_trap_onDeactivate",
-              month: format(month, "yyyy-MM"),
-              note: "focus-trap deactivate (Escape, outside click, or trap teardown)",
-            });
-            onClose("focus_trap_onDeactivate");
-          },
           returnFocusOnDeactivate: false,
+          delayInitialFocus: true,
         }}
       >
         <div
@@ -76,6 +77,7 @@ export function MonthBookingModal({
           aria-modal="true"
           aria-labelledby={titleId}
           className="plan-ahead-modal relative z-10 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl border border-[var(--control-border)] bg-[var(--page-bg)] shadow-lg sm:rounded-xl"
+          onKeyDown={onDialogKeyDown}
         >
           <div className="flex items-start justify-between gap-3 border-b border-[var(--control-border)] px-4 py-3 sm:px-6">
             <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -109,13 +111,7 @@ export function MonthBookingModal({
             <button
               type="button"
               className={navButtonClassName}
-              onClick={() => {
-                console.error("[PlanAheadModal] close requested", {
-                  reason: "close_button",
-                  month: format(month, "yyyy-MM"),
-                });
-                onClose("close_button");
-              }}
+              onClick={() => onClose("close_button")}
               aria-label="Close month calendar"
             >
               Close
