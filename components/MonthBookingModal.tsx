@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import FocusTrap from "focus-trap-react";
-import { useId, useRef, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, type KeyboardEvent } from "react";
 import { BookingFlow } from "@/components/BookingFlow";
 import type { BookingCategory } from "@/lib/categories";
 import type { DayBooking } from "@/lib/calendar/day-state";
@@ -37,13 +37,63 @@ export function MonthBookingModal({
 }: MonthBookingModalProps) {
   const titleId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    console.error("[PlanAheadModal] Escape debug: modal mounted", {
+      month: format(month, "yyyy-MM"),
+      dialogHandlerAttached: true,
+      dialogRefPresent: Boolean(dialogRef.current),
+      headingRefPresent: Boolean(headingRef.current),
+      activeElement: document.activeElement?.tagName ?? null,
+      activeElementId: document.activeElement?.id ?? null,
+      activeElementClass: document.activeElement?.className ?? null,
+    });
+
+    function onDocumentKeyDown(event: globalThis.KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      console.error("[PlanAheadModal] Escape debug: document keydown (capture)", {
+        key: event.key,
+        code: event.code,
+        targetTag: target?.tagName ?? null,
+        targetRole: target?.getAttribute("role") ?? null,
+        targetAriaLabel: target?.getAttribute("aria-label") ?? null,
+        dialogContainsTarget: dialogRef.current?.contains(target ?? null) ?? false,
+        defaultPrevented: event.defaultPrevented,
+      });
+    }
+
+    document.addEventListener("keydown", onDocumentKeyDown, true);
+
+    return () => {
+      document.removeEventListener("keydown", onDocumentKeyDown, true);
+      console.error("[PlanAheadModal] Escape debug: modal unmounted", {
+        month: format(month, "yyyy-MM"),
+      });
+    };
+  }, [isOpen, month]);
 
   if (!isOpen) {
     return null;
   }
 
   function onDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const target = event.target as HTMLElement;
+    console.error("[PlanAheadModal] Escape debug: dialog onKeyDown (bubble)", {
+      key: event.key,
+      code: event.code,
+      targetTag: target.tagName,
+      targetRole: target.getAttribute("role"),
+      currentTargetRole: event.currentTarget.getAttribute("role"),
+      defaultPrevented: event.defaultPrevented,
+    });
+
     if (event.key === "Escape") {
+      console.error("[PlanAheadModal] Escape debug: Escape matched on dialog — calling onClose");
       event.stopPropagation();
       onClose();
     }
@@ -73,6 +123,7 @@ export function MonthBookingModal({
         }}
       >
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
