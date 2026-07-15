@@ -39,6 +39,8 @@ type MonthCalendarProps = {
   month: Date;
   selectedCategory: BookingCategory;
   bookingsByDate: Record<string, DayBooking[]>;
+  selectedDates?: ReadonlySet<string>;
+  onToggleDate?: (dateKey: string) => void;
 };
 
 const STATE_LABEL: Record<DayState, string> = {
@@ -48,32 +50,55 @@ const STATE_LABEL: Record<DayState, string> = {
   full: "full",
 };
 
-function buildAriaLabel(day: Date, state: DayState, bookingCount: number): string {
+function todayIsoLocal(): string {
+  return format(new Date(), "yyyy-MM-dd");
+}
+
+function buildAriaLabel(
+  day: Date,
+  state: DayState,
+  bookingCount: number,
+  isSelected: boolean,
+  isUnavailable: boolean,
+  truckNames: string[],
+): string {
   const dateLabel = format(day, "MMMM d");
   const remaining = slotsRemaining(bookingCount);
   const truckWord = bookingCount === 1 ? "truck" : "trucks";
   const slotWord = remaining === 1 ? "slot" : "slots";
+  const selection = isSelected ? ", selected" : "";
+  const names =
+    truckNames.length > 0 ? `, booked by ${truckNames.join(" and ")}` : "";
 
-  if (state === "full") {
-    return `${dateLabel}, ${STATE_LABEL[state]}, ${bookingCount} trucks booked`;
+  if (isUnavailable) {
+    return `${dateLabel}, unavailable, past or current day, not selectable${names}`;
   }
 
-  return `${dateLabel}, ${STATE_LABEL[state]}, ${bookingCount} ${truckWord} booked, ${remaining} ${slotWord} remaining`;
+  if (state === "full") {
+    return `${dateLabel}, ${STATE_LABEL[state]}, ${bookingCount} trucks booked${names}${selection}`;
+  }
+
+  return `${dateLabel}, ${STATE_LABEL[state]}, ${bookingCount} ${truckWord} booked, ${remaining} ${slotWord} remaining${names}${selection}`;
 }
 
 export function MonthCalendar({
   month,
   selectedCategory,
   bookingsByDate,
+  selectedDates,
+  onToggleDate,
 }: MonthCalendarProps) {
   const gridId = useId();
+  const selectionEnabled = typeof onToggleDate === "function";
   const days = useMemo(() => {
     const monthStart = startOfMonth(month);
     const monthEnd = endOfMonth(month);
     const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
     const leadingCount = getDay(monthStart);
-    const trailingCount = (DAYS_PER_WEEK - ((leadingCount + monthDays.length) % DAYS_PER_WEEK)) % DAYS_PER_WEEK;
+    const trailingCount =
+      (DAYS_PER_WEEK - ((leadingCount + monthDays.length) % DAYS_PER_WEEK)) %
+      DAYS_PER_WEEK;
 
     const cells: Array<Date | null> = [
       ...Array.from({ length: leadingCount }, () => null),
@@ -114,8 +139,14 @@ export function MonthCalendar({
     [focusDay, month],
   );
 
+  const todayKey = todayIsoLocal();
+
   const onKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLButtonElement>, day: Date) => {
+    (
+      event: KeyboardEvent<HTMLButtonElement>,
+      day: Date,
+      isNotSelectable: boolean,
+    ) => {
       switch (event.key) {
         case "ArrowLeft":
           event.preventDefault();
@@ -151,11 +182,20 @@ export function MonthCalendar({
           focusDay(format(target, "yyyy-MM-dd"));
           break;
         }
+        case " ":
+        case "Enter": {
+          if (!selectionEnabled || isNotSelectable) {
+            break;
+          }
+          event.preventDefault();
+          onToggleDate?.(format(day, "yyyy-MM-dd"));
+          break;
+        }
         default:
           break;
       }
     },
-    [focusDay, moveFocus, month],
+    [focusDay, moveFocus, month, onToggleDate, selectionEnabled],
   );
 
   return (
@@ -199,8 +239,24 @@ export function MonthCalendar({
               const dayBookings = bookingsByDate[dateKey] ?? [];
               const state = resolveDayState(dayBookings, selectedCategory);
               const isFull = state === "full";
+              const isUnavailable = dateKey <= todayKey;
+              const isNotSelectable = isFull || isUnavailable;
+              const isSelected = selectedDates?.has(dateKey) ?? false;
               const isFocused = focusedDateKey === dateKey;
-              const ariaLabel = buildAriaLabel(day, state, dayBookings.length);
+              const truckNames = dayBookings
+                .map((booking) => booking.businessName)
+                .filter((name): name is string => Boolean(name));
+              const ariaLabel = buildAriaLabel(
+                day,
+                state,
+                dayBookings.length,
+                isSelected,
+                isUnavailable,
+                truckNames,
+              );
+              const cellStateClass = isUnavailable
+                ? "day-cell--unavailable"
+                : `day-cell--${state}`;
 
               return (
                 <div key={dateKey} role="gridcell" className="min-w-0">
@@ -215,20 +271,43 @@ export function MonthCalendar({
                     }}
                     tabIndex={isFocused ? 0 : -1}
                     aria-label={ariaLabel}
-                    aria-disabled={isFull || undefined}
+                    aria-disabled={isNotSelectable || undefined}
+                    aria-pressed={selectionEnabled ? isSelected : undefined}
                     onFocus={() => setFocusedDateKey(dateKey)}
-                    onKeyDown={(event) => onKeyDown(event, day)}
-                    className={`day-cell day-cell--${state} flex min-h-14 min-w-0 w-full flex-col items-stretch gap-0.5 overflow-hidden rounded-md border px-0.5 py-1 text-left sm:min-h-16 sm:px-1.5 sm:py-2 ${isFull ? "cursor-not-allowed" : ""}`}
+                    onKeyDown={(event) =>
+                      onKeyDown(event, day, isNotSelectable)
+                    }
+                    onClick={() => {
+                      if (!selectionEnabled || isNotSelectable) {
+                        return;
+                      }
+                      onToggleDate?.(dateKey);
+                    }}
+                    className={`day-cell ${cellStateClass} flex min-h-14 min-w-0 w-full flex-col items-stretch gap-0.5 overflow-hidden rounded-md border px-0.5 py-1 text-left sm:min-h-16 sm:px-1.5 sm:py-2 ${isNotSelectable ? "cursor-not-allowed" : selectionEnabled ? "cursor-pointer" : ""} ${isSelected ? "day-cell--selected" : ""}`}
                   >
                     <span className="text-sm font-semibold leading-none sm:text-base">
                       {format(day, "d")}
                     </span>
-                    {state !== "open" ? (
+                    {!isUnavailable && state !== "open" ? (
                       <span className="day-cell__tag break-words text-[0.6rem] leading-tight font-medium sm:text-xs">
                         <span className="sm:hidden">{STATE_TAG_MOBILE[state]}</span>
                         <span className="hidden sm:inline">
                           {STATE_TAG_DESKTOP[state]}
                         </span>
+                      </span>
+                    ) : null}
+                    {dayBookings.some((booking) => booking.businessName) ? (
+                      <span className="hidden flex-col gap-0.5 sm:flex">
+                        {dayBookings.map((booking) =>
+                          booking.businessName ? (
+                            <span
+                              key={booking.id}
+                              className="truncate text-[0.55rem] leading-tight opacity-90"
+                            >
+                              {booking.businessName}
+                            </span>
+                          ) : null,
+                        )}
                       </span>
                     ) : null}
                   </button>
