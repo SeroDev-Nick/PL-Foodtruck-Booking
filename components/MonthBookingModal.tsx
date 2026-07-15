@@ -16,7 +16,7 @@ type MonthBookingModalProps = {
   canGoNext: boolean;
   onPrevMonth: () => void;
   onNextMonth: () => void;
-  onClose: (reason: string) => void;
+  onClose: () => void;
   onRefreshBookings: () => Promise<void>;
 };
 
@@ -45,7 +45,7 @@ export function MonthBookingModal({
   function onDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       event.stopPropagation();
-      onClose("escape_key");
+      onClose();
     }
   }
 
@@ -54,7 +54,7 @@ export function MonthBookingModal({
       <div
         className="absolute inset-0 bg-black/40"
         aria-hidden="true"
-        onClick={() => onClose("backdrop_click")}
+        onClick={onClose}
       />
       {/*
         Do NOT wire onDeactivate → onClose. focus-trap-react documents that in
@@ -111,7 +111,7 @@ export function MonthBookingModal({
             <button
               type="button"
               className={navButtonClassName}
-              onClick={() => onClose("close_button")}
+              onClick={onClose}
               aria-label="Close month calendar"
             >
               Close

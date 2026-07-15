@@ -245,11 +245,7 @@ function BookPageContent() {
     setModalMonth(null);
   }
 
-  function closeModal(reason: string) {
-    console.error("[PlanAheadModal] close applied", {
-      reason,
-      previousMonth: modalMonth ? format(modalMonth, "yyyy-MM") : null,
-    });
+  function closeModal() {
     setModalMonth(null);
     const opener = returnFocusRef.current;
     requestAnimationFrame(() => {
@@ -258,10 +254,6 @@ function BookPageContent() {
   }
 
   function openMonth(month: Date, opener: HTMLButtonElement) {
-    console.error("[PlanAheadModal] open requested", {
-      reason: "tile_click",
-      month: format(month, "yyyy-MM"),
-    });
     returnFocusRef.current = opener;
     setModalMonth(month);
   }
