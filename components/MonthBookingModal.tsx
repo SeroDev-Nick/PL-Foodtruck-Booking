@@ -16,7 +16,7 @@ type MonthBookingModalProps = {
   canGoNext: boolean;
   onPrevMonth: () => void;
   onNextMonth: () => void;
-  onClose: () => void;
+  onClose: (reason: string) => void;
   onRefreshBookings: () => Promise<void>;
 };
 
@@ -47,14 +47,27 @@ export function MonthBookingModal({
       <div
         className="absolute inset-0 bg-black/40"
         aria-hidden="true"
-        onClick={onClose}
+        onClick={() => {
+          console.error("[PlanAheadModal] close requested", {
+            reason: "backdrop_click",
+            month: format(month, "yyyy-MM"),
+          });
+          onClose("backdrop_click");
+        }}
       />
       <FocusTrap
         focusTrapOptions={{
           initialFocus: () => headingRef.current,
           escapeDeactivates: true,
           allowOutsideClick: true,
-          onDeactivate: onClose,
+          onDeactivate: () => {
+            console.error("[PlanAheadModal] close requested", {
+              reason: "focus_trap_onDeactivate",
+              month: format(month, "yyyy-MM"),
+              note: "focus-trap deactivate (Escape, outside click, or trap teardown)",
+            });
+            onClose("focus_trap_onDeactivate");
+          },
           returnFocusOnDeactivate: false,
         }}
       >
@@ -96,7 +109,13 @@ export function MonthBookingModal({
             <button
               type="button"
               className={navButtonClassName}
-              onClick={onClose}
+              onClick={() => {
+                console.error("[PlanAheadModal] close requested", {
+                  reason: "close_button",
+                  month: format(month, "yyyy-MM"),
+                });
+                onClose("close_button");
+              }}
               aria-label="Close month calendar"
             >
               Close
