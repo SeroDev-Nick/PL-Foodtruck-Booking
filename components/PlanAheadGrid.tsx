@@ -35,9 +35,9 @@ function buildMonthCells(month: Date): Array<Date | null> {
   const monthEnd = endOfMonth(month);
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const leadingCount = getDay(monthStart);
-  const trailingCount =
-    (DAYS_PER_WEEK - ((leadingCount + monthDays.length) % DAYS_PER_WEEK)) %
-    DAYS_PER_WEEK;
+  // Always 6 weeks (42 cells) so every tile is the same height.
+  const totalCells = DAYS_PER_WEEK * 6;
+  const trailingCount = totalCells - leadingCount - monthDays.length;
 
   return [
     ...Array.from({ length: leadingCount }, () => null),
