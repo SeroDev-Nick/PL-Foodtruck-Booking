@@ -1,6 +1,6 @@
 "use client";
 
-import { format, isSameMonth } from "date-fns";
+import { format } from "date-fns";
 import Link from "next/link";
 import {
   useCallback,
@@ -128,39 +128,12 @@ export function BookingFlow({
     () => new Set(Object.keys(selectedDays)),
     [selectedDays],
   );
-  const allSelectedDateKeys = useMemo(
+  // Full cross-month selection for editors, Continue, apply-to-all, and submit.
+  // MonthCalendar still only renders the current `month` prop.
+  const selectedDateList = useMemo(
     () => Object.keys(selectedDays).sort(),
     [selectedDays],
   );
-  const selectedDateList = useMemo(() => {
-    const inCurrentMonth = allSelectedDateKeys.filter((dateKey) =>
-      isSameMonth(new Date(`${dateKey}T00:00:00`), month),
-    );
-    // TEMP debug — cross-month selection scoping
-    console.error("[BookingFlow] selectedDateList scoped to month", {
-      month: format(month, "yyyy-MM"),
-      allSelectedDateKeys,
-      inCurrentMonthOnly: inCurrentMonth,
-      excludedByMonthFilter: allSelectedDateKeys.filter(
-        (key) => !inCurrentMonth.includes(key),
-      ),
-    });
-    return inCurrentMonth;
-  }, [allSelectedDateKeys, month]);
-
-  useEffect(() => {
-    console.error("[BookingFlow] month prop changed", {
-      month: format(month, "yyyy-MM"),
-      selectedDaysOverrideKeys: selectedDaysOverride
-        ? Object.keys(selectedDaysOverride).sort()
-        : null,
-      storedDraftKeys: storedDraft
-        ? Object.keys(storedDraft.selectedDays).sort()
-        : null,
-      resolvedSelectedDaysKeys: Object.keys(selectedDays).sort(),
-    });
-  }, [month, selectedDaysOverride, storedDraft, selectedDays]);
-
   const managerHref = managerMailtoHref();
 
   const persistDraft = useCallback(
@@ -169,12 +142,6 @@ export function BookingFlow({
       nextNotes: string,
       nextStep: "dates" | "identity",
     ) => {
-      const keys = Object.keys(nextSelected).sort();
-      console.error("[BookingFlow] persistDraft write", {
-        month: format(month, "yyyy-MM"),
-        step: nextStep,
-        keysWritten: keys,
-      });
       writeBookingDraft({
         category,
         selectedDays: nextSelected,
@@ -182,7 +149,7 @@ export function BookingFlow({
         step: nextStep,
       });
     },
-    [category, month],
+    [category],
   );
 
   useEffect(() => {
@@ -241,11 +208,6 @@ export function BookingFlow({
     } else {
       next[dateKey] = createEmptyDayTimes();
     }
-    console.error("[BookingFlow] toggleDate", {
-      month: format(month, "yyyy-MM"),
-      toggled: dateKey,
-      keysAfterToggle: Object.keys(next).sort(),
-    });
     setSelectedDaysOverride(next);
     setSubmitError(null);
   }
