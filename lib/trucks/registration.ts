@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const COI_BUCKET = "truck-cois";
 export const COI_MAX_BYTES = 10 * 1024 * 1024; // 10MB
+/** Short-lived signed URL TTL for manager Preview / Download (seconds). */
+export const COI_SIGNED_URL_SECONDS = 180;
 
 export const ALLOWED_COI_MIME_TYPES = [
   "application/pdf",
@@ -75,4 +77,54 @@ export function sanitizeFileName(name: string): string {
   const base = name.split(/[/\\]/).pop() ?? "coi";
   const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
   return cleaned.length > 0 ? cleaned : "coi";
+}
+
+export type ValidateCoiFileResult =
+  | {
+      ok: true;
+      bytes: Uint8Array;
+      contentType: AllowedCoiMimeType;
+      safeName: string;
+    }
+  | { ok: false; error: string };
+
+/**
+ * Shared COI file validation for registration and manager re-upload.
+ * Checks size and magic-byte content type — never trusts the client MIME type.
+ */
+export async function validateCoiFile(
+  file: File,
+): Promise<ValidateCoiFileResult> {
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: "Please upload a COI document." };
+  }
+
+  if (file.size > COI_MAX_BYTES) {
+    return {
+      ok: false,
+      error: "COI file must be 10MB or smaller.",
+    };
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  // Dynamic import keeps this module safe for Client Components that only
+  // need constants like COI_MAX_BYTES (file-type is Node/server-oriented).
+  const { fileTypeFromBuffer } = await import("file-type");
+  const detected = await fileTypeFromBuffer(bytes);
+  const contentType = mimeFromDetectedFileType(detected?.ext);
+
+  if (!contentType) {
+    return {
+      ok: false,
+      error:
+        "COI must be a PDF or image file (JPEG, PNG, or WebP). File content did not match an allowed type.",
+    };
+  }
+
+  return {
+    ok: true,
+    bytes,
+    contentType,
+    safeName: sanitizeFileName(file.name),
+  };
 }
