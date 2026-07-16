@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+  type CSSProperties,
+} from "react";
+import { createPortal } from "react-dom";
 import {
   cancelTruckBookings,
   markBookingNoShow,
@@ -343,16 +352,85 @@ function BookingRowMenu({
 }) {
   const menuId = useId();
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({
+    position: "fixed",
+    top: 0,
+    left: 0,
+    visibility: "hidden",
+  });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const GAP = 4;
+    const VIEWPORT_PAD = 8;
+    const ESTIMATED_MENU_HEIGHT = 48;
+
+    function updatePosition() {
+      const trigger = triggerRef.current;
+      if (!trigger) {
+        return;
+      }
+
+      const rect = trigger.getBoundingClientRect();
+      const menuHeight =
+        menuRef.current?.getBoundingClientRect().height || ESTIMATED_MENU_HEIGHT;
+      const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_PAD;
+      const spaceAbove = rect.top - VIEWPORT_PAD;
+      const openUpward =
+        spaceBelow < menuHeight + GAP && spaceAbove > spaceBelow;
+
+      const top = openUpward
+        ? Math.max(VIEWPORT_PAD, rect.top - GAP - menuHeight)
+        : Math.min(
+            rect.bottom + GAP,
+            window.innerHeight - VIEWPORT_PAD - menuHeight,
+          );
+
+      const menuWidth = menuRef.current?.offsetWidth ?? 160;
+      const left = Math.min(
+        Math.max(VIEWPORT_PAD, rect.right - menuWidth),
+        window.innerWidth - VIEWPORT_PAD - menuWidth,
+      );
+
+      // Defer so this isn't a synchronous setState inside the effect body.
+      requestAnimationFrame(() => {
+        setMenuStyle({
+          position: "fixed",
+          top,
+          left,
+          zIndex: 50,
+          minWidth: Math.max(160, rect.width),
+        });
+      });
+    }
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
       return;
     }
     function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+      const target = event.target as Node;
+      if (
+        triggerRef.current?.contains(target) ||
+        menuRef.current?.contains(target)
+      ) {
+        return;
       }
+      setOpen(false);
     }
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -378,42 +456,60 @@ function BookingRowMenu({
   }
 
   return (
-    <div className="relative" ref={rootRef}>
+    <>
       <button
+        ref={triggerRef}
         type="button"
         className={buttonClassName}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
         disabled={disabled}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          setOpen((value) => {
+            if (!value) {
+              setMenuStyle({
+                position: "fixed",
+                top: 0,
+                left: 0,
+                visibility: "hidden",
+              });
+            }
+            return !value;
+          });
+        }}
         aria-label={`Actions for ${booking.bookingDate}`}
       >
         ⋯
       </button>
-      {open ? (
-        <div
-          id={menuId}
-          role="menu"
-          className="absolute right-0 z-10 mt-1 min-w-[10rem] rounded-lg border border-[var(--control-border)] bg-[var(--control-bg)] p-1 shadow-sm"
-        >
-          <button
-            type="button"
-            role="menuitem"
-            className="flex w-full min-h-10 items-center rounded-md px-3 text-left text-sm text-[var(--page-fg)] hover:bg-[var(--control-bg-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-            onClick={() => {
-              setOpen(false);
-              if (booking.isCancelable) {
-                onCancel();
-              } else {
-                onNoShow();
-              }
-            }}
-          >
-            {actionLabel}
-          </button>
-        </div>
-      ) : null}
-    </div>
+      {typeof document !== "undefined" && open
+        ? createPortal(
+            <div
+              ref={menuRef}
+              id={menuId}
+              role="menu"
+              style={menuStyle}
+              className="rounded-lg border border-[var(--control-border)] bg-[var(--control-bg)] p-1 shadow-sm"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                className="flex w-full min-h-10 items-center rounded-md px-3 text-left text-sm text-[var(--page-fg)] hover:bg-[var(--control-bg-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                onClick={() => {
+                  setOpen(false);
+                  if (booking.isCancelable) {
+                    onCancel();
+                  } else {
+                    onNoShow();
+                  }
+                }}
+              >
+                {actionLabel}
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }

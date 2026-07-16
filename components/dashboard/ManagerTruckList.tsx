@@ -121,13 +121,23 @@ function ManagerTruckCard({ truck }: { truck: ManagerTruckRow }) {
   return (
     <article className="rounded-xl border border-[var(--control-border)] bg-[var(--control-bg)] p-4 sm:p-5">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold text-[var(--page-fg)]">
-            {truck.businessName}
-          </h2>
-          <p className="text-sm text-[var(--page-muted)]">
-            {truck.managerApproved ? "Approved to book" : "Waiting for approval"}
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 flex flex-col gap-1">
+            <h2 className="text-lg font-semibold text-[var(--page-fg)]">
+              {truck.businessName}
+            </h2>
+            <p className="text-sm text-[var(--page-muted)]">
+              {truck.managerApproved
+                ? "Approved to book"
+                : "Waiting for approval"}
+            </p>
+          </div>
+          <Link
+            href={`/dashboard/trucks/${truck.id}`}
+            className={`${buttonClassName} shrink-0`}
+          >
+            View bookings
+          </Link>
         </div>
 
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -163,113 +173,113 @@ function ManagerTruckCard({ truck }: { truck: ManagerTruckRow }) {
           </div>
         </dl>
 
-        <div className="flex flex-wrap gap-2">
-          {truck.managerApproved ? (
+        <div className="flex flex-col gap-3 border-t border-[var(--control-border)] pt-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               className={buttonClassName}
-              disabled={pending}
+              disabled={pending || !truck.hasCoiDocument}
               onClick={() =>
                 runAction(async () => {
-                  const result = await setTruckApproval(truck.id, false);
+                  const result = await getCoiPreviewUrl(truck.id);
                   if (!result.ok) {
                     setError(result.error);
                     return;
                   }
-                  setMessage("Approval removed. This truck can no longer book.");
+                  window.open(result.url, "_blank", "noopener,noreferrer");
+                  setMessage(
+                    `COI preview link opened (expires in about ${Math.round(result.expiresInSeconds / 60)} minutes).`,
+                  );
                 })
               }
             >
-              Remove approval
+              Preview COI
             </button>
-          ) : (
+
             <button
               type="button"
               className={buttonClassName}
-              disabled={pending}
+              disabled={pending || !truck.hasCoiDocument}
               onClick={() =>
                 runAction(async () => {
-                  const result = await setTruckApproval(truck.id, true);
+                  const result = await getCoiDownloadUrl(truck.id);
                   if (!result.ok) {
                     setError(result.error);
                     return;
                   }
-                  setMessage("Truck approved. It can book when its COI is valid.");
+                  const link = document.createElement("a");
+                  link.href = result.url;
+                  link.rel = "noopener noreferrer";
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                  setMessage(
+                    `COI download started (link expires in about ${Math.round(result.expiresInSeconds / 60)} minutes).`,
+                  );
                 })
               }
             >
-              Approve
+              Download COI
             </button>
-          )}
 
-          <button
-            type="button"
-            className={buttonClassName}
-            disabled={pending || !truck.hasCoiDocument}
-            onClick={() =>
-              runAction(async () => {
-                const result = await getCoiPreviewUrl(truck.id);
-                if (!result.ok) {
-                  setError(result.error);
-                  return;
+            <button
+              type="button"
+              className={buttonClassName}
+              disabled={pending}
+              aria-expanded={showReupload}
+              onClick={() => {
+                clearFeedback();
+                setShowReupload((open) => !open);
+              }}
+            >
+              {showReupload ? "Cancel re-upload" : "Replace COI"}
+            </button>
+          </div>
+
+          <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+            {truck.managerApproved ? (
+              <button
+                type="button"
+                className={buttonClassName}
+                disabled={pending}
+                onClick={() =>
+                  runAction(async () => {
+                    const result = await setTruckApproval(truck.id, false);
+                    if (!result.ok) {
+                      setError(result.error);
+                      return;
+                    }
+                    setMessage(
+                      "Approval removed. This truck can no longer book.",
+                    );
+                  })
                 }
-                window.open(result.url, "_blank", "noopener,noreferrer");
-                setMessage(
-                  `COI preview link opened (expires in about ${Math.round(result.expiresInSeconds / 60)} minutes).`,
-                );
-              })
-            }
-          >
-            Preview COI
-          </button>
-
-          <button
-            type="button"
-            className={buttonClassName}
-            disabled={pending || !truck.hasCoiDocument}
-            onClick={() =>
-              runAction(async () => {
-                const result = await getCoiDownloadUrl(truck.id);
-                if (!result.ok) {
-                  setError(result.error);
-                  return;
+              >
+                Remove approval
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={buttonClassName}
+                disabled={pending}
+                onClick={() =>
+                  runAction(async () => {
+                    const result = await setTruckApproval(truck.id, true);
+                    if (!result.ok) {
+                      setError(result.error);
+                      return;
+                    }
+                    setMessage(
+                      "Truck approved. It can book when its COI is valid.",
+                    );
+                  })
                 }
-                const link = document.createElement("a");
-                link.href = result.url;
-                link.rel = "noopener noreferrer";
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                setMessage(
-                  `COI download started (link expires in about ${Math.round(result.expiresInSeconds / 60)} minutes).`,
-                );
-              })
-            }
-          >
-            Download COI
-          </button>
-
-          <button
-            type="button"
-            className={buttonClassName}
-            disabled={pending}
-            aria-expanded={showReupload}
-            onClick={() => {
-              clearFeedback();
-              setShowReupload((open) => !open);
-            }}
-          >
-            {showReupload ? "Cancel re-upload" : "Replace COI"}
-          </button>
-
-          <Link
-            href={`/dashboard/trucks/${truck.id}`}
-            className={buttonClassName}
-          >
-            View bookings
-          </Link>
+              >
+                Approve
+              </button>
+            )}
+          </div>
         </div>
-
         {showReupload ? (
           <form
             className="flex flex-col gap-3 border-t border-[var(--control-border)] pt-4"

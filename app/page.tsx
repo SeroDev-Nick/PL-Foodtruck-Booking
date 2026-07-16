@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   BOOKING_CATEGORY_STORAGE_KEY,
@@ -41,6 +42,16 @@ export default function Home() {
             </li>
           ))}
         </ul>
+
+        <p className="border-t border-[var(--control-border)] pt-6 text-center text-sm text-[var(--page-muted)]">
+          Clubhouse staff?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-[var(--page-fg)] underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          >
+            Manager Login
+          </Link>
+        </p>
       </main>
     </div>
   );
