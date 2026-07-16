@@ -4,7 +4,6 @@ import { requireManagerSession } from "@/lib/auth/require-manager";
 import { buildCsv } from "@/lib/csv";
 import { todayIsoLocal } from "@/lib/dates/today";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveCoiUrgency, coiUrgencyLabel } from "@/lib/trucks/coi-status";
 
 export type CsvExportResult =
   | { ok: true; fileName: string; content: string }
@@ -45,17 +44,15 @@ export async function exportTrucksCsv(): Promise<CsvExportResult> {
 
   const rows = (data ?? []).map((truck) => {
     const expiration = String(truck.coi_expiration_date ?? "");
-    const urgency = expiration
-      ? resolveCoiUrgency(expiration, todayIso)
-      : "ok";
-    const statusLabel =
-      coiUrgencyLabel(urgency) ?? "Valid (more than 30 days)";
+    // CSV uses a binary Valid/Expired label; the dashboard keeps its 30-day warning.
+    const coiStatus =
+      expiration && expiration >= todayIso ? "Valid" : "Expired";
     return [
       truck.business_name,
       truck.contact_email,
       truck.phone_number,
       expiration,
-      statusLabel,
+      coiStatus,
       truck.manager_approved ? "Yes" : "No",
       truck.created_at ? String(truck.created_at).slice(0, 10) : "",
     ];
