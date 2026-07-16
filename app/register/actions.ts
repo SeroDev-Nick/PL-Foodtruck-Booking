@@ -1,14 +1,11 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { fileTypeFromBuffer } from "file-type";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   COI_BUCKET,
-  COI_MAX_BYTES,
-  mimeFromDetectedFileType,
-  sanitizeFileName,
   truckRegistrationFieldsSchema,
+  validateCoiFile,
 } from "@/lib/trucks/registration";
 
 export type RegisterTruckResult =
@@ -31,39 +28,24 @@ export async function registerTruck(
   }
 
   const file = formData.get("coiFile");
-  if (!(file instanceof File) || file.size === 0) {
+  if (!(file instanceof File)) {
     return { ok: false, error: "Please upload a COI document." };
   }
 
-  if (file.size > COI_MAX_BYTES) {
-    return {
-      ok: false,
-      error: "COI file must be 10MB or smaller.",
-    };
-  }
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const detected = await fileTypeFromBuffer(bytes);
-  const contentType = mimeFromDetectedFileType(detected?.ext);
-
-  if (!contentType) {
-    return {
-      ok: false,
-      error:
-        "COI must be a PDF or image file (JPEG, PNG, or WebP). File content did not match an allowed type.",
-    };
+  const validated = await validateCoiFile(file);
+  if (!validated.ok) {
+    return validated;
   }
 
   const truckId = randomUUID();
-  const safeName = sanitizeFileName(file.name);
-  const storagePath = `cois/${truckId}/${safeName}`;
+  const storagePath = `cois/${truckId}/${validated.safeName}`;
 
   const admin = createAdminClient();
 
   const { error: uploadError } = await admin.storage
     .from(COI_BUCKET)
-    .upload(storagePath, bytes, {
-      contentType,
+    .upload(storagePath, validated.bytes, {
+      contentType: validated.contentType,
       upsert: false,
     });
 
