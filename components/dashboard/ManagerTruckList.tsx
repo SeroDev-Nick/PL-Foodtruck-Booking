@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState, useTransition, type FormEvent } from "react";
 import {
   getCoiDownloadUrl,
@@ -36,6 +37,8 @@ type ManagerTruckListProps = {
 };
 
 export function ManagerTruckList({ trucks }: ManagerTruckListProps) {
+  const [query, setQuery] = useState("");
+
   if (trucks.length === 0) {
     return (
       <p className="text-base text-[var(--page-muted)]" role="status">
@@ -44,14 +47,42 @@ export function ManagerTruckList({ trucks }: ManagerTruckListProps) {
     );
   }
 
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredTrucks =
+    normalizedQuery.length === 0
+      ? trucks
+      : trucks.filter((truck) =>
+          truck.businessName.toLowerCase().includes(normalizedQuery),
+        );
+
   return (
-    <ul className="flex list-none flex-col gap-4 p-0">
-      {trucks.map((truck) => (
-        <li key={truck.id}>
-          <ManagerTruckCard truck={truck} />
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-4">
+      <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--page-fg)]">
+        Search by business name
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Type a name to filter…"
+          className={fieldClassName}
+          autoComplete="off"
+        />
+      </label>
+
+      {filteredTrucks.length === 0 ? (
+        <p className="text-base text-[var(--page-muted)]" role="status">
+          No trucks match “{query.trim()}”.
+        </p>
+      ) : (
+        <ul className="flex list-none flex-col gap-4 p-0">
+          {filteredTrucks.map((truck) => (
+            <li key={truck.id}>
+              <ManagerTruckCard truck={truck} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -230,6 +261,13 @@ function ManagerTruckCard({ truck }: { truck: ManagerTruckRow }) {
           >
             {showReupload ? "Cancel re-upload" : "Replace COI"}
           </button>
+
+          <Link
+            href={`/dashboard/trucks/${truck.id}`}
+            className={buttonClassName}
+          >
+            View bookings
+          </Link>
         </div>
 
         {showReupload ? (
