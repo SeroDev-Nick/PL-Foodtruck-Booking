@@ -1,3 +1,4 @@
+import { CsvExportButtons } from "@/components/dashboard/CsvExportButtons";
 import {
   ManagerTruckList,
   type ManagerTruckRow,
@@ -41,13 +42,16 @@ export default async function DashboardPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--page-fg)]">
-          Trucks
-        </h1>
-        <p className="text-base leading-relaxed text-[var(--page-muted)]">
-          Review registrations, insurance documents, and booking approval.
-        </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--page-fg)]">
+            Trucks
+          </h1>
+          <p className="text-base leading-relaxed text-[var(--page-muted)]">
+            Review registrations, insurance documents, and booking approval.
+          </p>
+        </div>
+        <CsvExportButtons />
       </header>
 
       {error ? (
