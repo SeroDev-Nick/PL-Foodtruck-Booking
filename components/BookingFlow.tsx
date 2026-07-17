@@ -304,6 +304,11 @@ export function BookingFlow({
       for (const date of result.succeededDates) {
         delete remaining[date];
       }
+      // Failed days cannot succeed again without an external change — clear them
+      // so they are not stuck selected (especially once a day becomes Full).
+      for (const failure of result.failures) {
+        delete remaining[failure.date];
+      }
       setSelectedDaysOverride(remaining);
       setSubmitResult(result);
       setStepOverride("result");
@@ -591,9 +596,9 @@ export function BookingFlow({
           <p className="text-base font-medium leading-relaxed">
             {submitResult.failures.length === 0 ? (
               <>
-                Your booking is confirmed! You&apos;re automatically approved
-                for {formatConfirmedDates(submitResult.succeededDates)} — no
-                further steps needed.
+                Your booking is confirmed and approved! We look forward to
+                seeing you at the clubhouse on{" "}
+                {formatConfirmedDates(submitResult.succeededDates)}.
               </>
             ) : (
               <>

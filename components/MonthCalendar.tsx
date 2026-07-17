@@ -145,7 +145,7 @@ export function MonthCalendar({
     (
       event: KeyboardEvent<HTMLButtonElement>,
       day: Date,
-      isNotSelectable: boolean,
+      canToggleSelection: boolean,
     ) => {
       switch (event.key) {
         case "ArrowLeft":
@@ -184,7 +184,7 @@ export function MonthCalendar({
         }
         case " ":
         case "Enter": {
-          if (!selectionEnabled || isNotSelectable) {
+          if (!selectionEnabled || !canToggleSelection) {
             break;
           }
           event.preventDefault();
@@ -242,6 +242,9 @@ export function MonthCalendar({
               const isUnavailable = dateKey <= todayKey;
               const isNotSelectable = isFull || isUnavailable;
               const isSelected = selectedDates?.has(dateKey) ?? false;
+              // Full/unavailable only blocks NEW selection — already-selected days
+              // can always be deselected (e.g. after a day became full mid-submit).
+              const canToggleSelection = isSelected || !isNotSelectable;
               const isFocused = focusedDateKey === dateKey;
               const truckNames = dayBookings
                 .map((booking) => booking.businessName)
@@ -271,19 +274,23 @@ export function MonthCalendar({
                     }}
                     tabIndex={isFocused ? 0 : -1}
                     aria-label={ariaLabel}
-                    aria-disabled={isNotSelectable || undefined}
+                    aria-disabled={
+                      selectionEnabled && !canToggleSelection
+                        ? true
+                        : undefined
+                    }
                     aria-pressed={selectionEnabled ? isSelected : undefined}
                     onFocus={() => setFocusedDateKey(dateKey)}
                     onKeyDown={(event) =>
-                      onKeyDown(event, day, isNotSelectable)
+                      onKeyDown(event, day, canToggleSelection)
                     }
                     onClick={() => {
-                      if (!selectionEnabled || isNotSelectable) {
+                      if (!selectionEnabled || !canToggleSelection) {
                         return;
                       }
                       onToggleDate?.(dateKey);
                     }}
-                    className={`day-cell ${cellStateClass} flex min-h-14 min-w-0 w-full flex-col items-stretch gap-0.5 overflow-hidden rounded-md border px-0.5 py-1 text-left sm:min-h-16 sm:px-1.5 sm:py-2 ${isNotSelectable ? "cursor-not-allowed" : selectionEnabled ? "cursor-pointer" : ""} ${isSelected ? "day-cell--selected" : ""}`}
+                    className={`day-cell ${cellStateClass} flex min-h-14 min-w-0 w-full flex-col items-stretch gap-0.5 overflow-hidden rounded-md border px-0.5 py-1 text-left sm:min-h-16 sm:px-1.5 sm:py-2 ${!canToggleSelection ? "cursor-not-allowed" : selectionEnabled ? "cursor-pointer" : ""} ${isSelected ? "day-cell--selected" : ""}`}
                   >
                     <span className="text-sm font-semibold leading-none sm:text-base">
                       {format(day, "d")}
