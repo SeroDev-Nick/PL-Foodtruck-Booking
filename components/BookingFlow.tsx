@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -19,7 +20,10 @@ import {
   writeBookingDraft,
   type BookingDraftDay,
 } from "@/lib/bookings/draft";
-import { failureMessageForDay } from "@/lib/bookings/messages";
+import {
+  failureMessageForDay,
+  formatBookingDateLabel,
+} from "@/lib/bookings/messages";
 import type { SubmitBookingsResult } from "@/lib/bookings/schema";
 import type { BookingCategory } from "@/lib/categories";
 import type { DayBooking } from "@/lib/calendar/day-state";
@@ -68,6 +72,17 @@ function timesAreValid(day: BookingDraftDay): boolean {
   return Boolean(day.startTime && day.endTime && day.endTime > day.startTime);
 }
 
+function formatConfirmedDates(isoDates: string[]): string {
+  const labels = isoDates.map(formatBookingDateLabel);
+  if (labels.length <= 1) {
+    return labels[0] ?? "";
+  }
+  if (labels.length === 2) {
+    return `${labels[0]} and ${labels[1]}`;
+  }
+  return `${labels.slice(0, -1).join(", ")}, and ${labels.at(-1)}`;
+}
+
 export type BookingFlowProps = {
   category: BookingCategory;
   month: Date;
@@ -84,6 +99,7 @@ export function BookingFlow({
   onRefreshBookings,
   showCalendarHeading = true,
 }: BookingFlowProps) {
+  const router = useRouter();
   const storedDraft = useMatchingBookingDraft(category);
 
   const [selectedDaysOverride, setSelectedDaysOverride] = useState<Record<
@@ -573,18 +589,26 @@ export function BookingFlow({
           role="status"
         >
           <p className="text-base font-medium leading-relaxed">
-            {submitResult.succeededDates.length} of{" "}
-            {submitResult.succeededDates.length + submitResult.failures.length}{" "}
-            day
-            {submitResult.succeededDates.length +
-              submitResult.failures.length ===
-            1
-              ? ""
-              : "s"}{" "}
-            booked successfully
-            {submitResult.succeededDates.length > 0
-              ? ". View them on the calendar."
-              : "."}
+            {submitResult.failures.length === 0 ? (
+              <>
+                Your booking is confirmed! You&apos;re automatically approved
+                for {formatConfirmedDates(submitResult.succeededDates)} — no
+                further steps needed.
+              </>
+            ) : (
+              <>
+                {submitResult.succeededDates.length} of{" "}
+                {submitResult.succeededDates.length +
+                  submitResult.failures.length}{" "}
+                day
+                {submitResult.succeededDates.length +
+                  submitResult.failures.length ===
+                1
+                  ? ""
+                  : "s"}{" "}
+                confirmed and automatically approved.
+              </>
+            )}
           </p>
 
           {submitResult.failures.length > 0 ? (
@@ -601,6 +625,10 @@ export function BookingFlow({
             type="button"
             className={buttonClassName}
             onClick={() => {
+              if (submitResult.failures.length === 0) {
+                router.push("/");
+                return;
+              }
               setSubmitResult(null);
               setSubmitError(null);
               setTruckId("");
@@ -608,7 +636,9 @@ export function BookingFlow({
               setNotesOverride("");
             }}
           >
-            Book more days
+            {submitResult.failures.length === 0
+              ? "Back to categories"
+              : "Adjust failed days"}
           </button>
         </section>
       ) : null}
