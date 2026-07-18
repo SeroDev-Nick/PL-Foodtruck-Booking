@@ -24,6 +24,8 @@ export type ManagerTruckRow = {
   coiUrgency: CoiUrgency;
   managerApproved: boolean;
   hasCoiDocument: boolean;
+  messageCount: number;
+  unreadMessageCount: number;
 };
 
 const buttonClassName =
@@ -132,12 +134,33 @@ function ManagerTruckCard({ truck }: { truck: ManagerTruckRow }) {
                 : "Waiting for approval"}
             </p>
           </div>
-          <Link
-            href={`/dashboard/trucks/${truck.id}`}
-            className={`${buttonClassName} shrink-0`}
-          >
-            View bookings
-          </Link>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <Link
+              href={`/dashboard/trucks/${truck.id}`}
+              className={buttonClassName}
+            >
+              View bookings
+            </Link>
+            <Link
+              href={`/dashboard/trucks/${truck.id}/messages`}
+              className={buttonClassName}
+              aria-label={
+                truck.unreadMessageCount > 0
+                  ? `Messages: ${truck.messageCount} total, ${truck.unreadMessageCount} unread`
+                  : `Messages: ${truck.messageCount} total`
+              }
+            >
+              <span>Messages</span>
+              <span className="ml-2 tabular-nums text-[var(--page-fg)]">
+                {truck.messageCount}
+              </span>
+              {truck.unreadMessageCount > 0 ? (
+                <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--error-fg)] px-1.5 py-0.5 text-xs font-semibold text-white">
+                  {truck.unreadMessageCount}
+                </span>
+              ) : null}
+            </Link>
+          </div>
         </div>
 
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
