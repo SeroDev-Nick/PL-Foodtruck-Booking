@@ -524,9 +524,8 @@ export function BookingFlow({
               className="font-medium text-[var(--focus-ring)] underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               onClick={() => setContactOpen(true)}
             >
-              Contact the manager about your booking status
+              Contact the manager about your booking&nbsp;status.
             </button>
-            .
           </p>
 
           <label className="flex flex-col gap-1.5 text-sm font-medium">
