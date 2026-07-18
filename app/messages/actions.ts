@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MESSAGE_ATTACHMENTS_BUCKET } from "@/lib/messages/constants";
+import { notifyPrimaryManagerOfMessage } from "@/lib/messages/notify";
 import { isMessageSubmitRateLimited } from "@/lib/messages/rate-limit";
 import { messageSubmissionSchema } from "@/lib/messages/schema";
 import { validateCoiFile } from "@/lib/trucks/registration";
@@ -28,6 +29,19 @@ async function resolveClientIp(): Promise<string> {
     return forwarded.split(",")[0]?.trim() || "unknown";
   }
   return headerStore.get("x-real-ip")?.trim() || "unknown";
+}
+
+async function resolveAppBaseUrl(): Promise<string> {
+  const headerStore = await headers();
+  const host =
+    headerStore.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    headerStore.get("host")?.trim();
+  if (!host) {
+    return "";
+  }
+  const proto =
+    headerStore.get("x-forwarded-proto")?.split(",")[0]?.trim() || "http";
+  return `${proto}://${host}`;
 }
 
 export async function submitMessage(
@@ -88,7 +102,7 @@ export async function submitMessage(
 
   const { data: truck, error: truckError } = await admin
     .from("truck_names")
-    .select("id")
+    .select("id, business_name")
     .eq("id", truckId)
     .maybeSingle();
 
@@ -136,6 +150,18 @@ export async function submitMessage(
       error: "Could not send your message. Please try again.",
     };
   }
+
+  // Best-effort only — never fail the saved message if EmailJS is down.
+  const baseUrl = await resolveAppBaseUrl();
+  await notifyPrimaryManagerOfMessage({
+    truckId,
+    businessName: String(truck.business_name ?? "Unknown truck"),
+    subject,
+    body,
+    dashboardUrl: baseUrl
+      ? `${baseUrl}/dashboard/trucks/${truckId}/messages`
+      : `/dashboard/trucks/${truckId}/messages`,
+  });
 
   return { ok: true };
 }
