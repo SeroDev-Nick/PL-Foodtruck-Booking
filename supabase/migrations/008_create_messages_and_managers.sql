@@ -52,7 +52,7 @@ CREATE TABLE public.managers (
 );
 
 COMMENT ON TABLE public.managers IS
-  'Manager Auth users. is_primary designates the EmailJS notification recipient.';
+  'Manager Auth users. is_primary designates the SendGrid notification recipient.';
 
 ALTER TABLE public.managers ENABLE ROW LEVEL SECURITY;
 -- No policies: anon/authenticated have no direct access.

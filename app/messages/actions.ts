@@ -151,7 +151,7 @@ export async function submitMessage(
     };
   }
 
-  // Best-effort only — never fail the saved message if EmailJS is down.
+  // Best-effort only — never fail the saved message if SendGrid is down.
   const baseUrl = await resolveAppBaseUrl();
   await notifyPrimaryManagerOfMessage({
     truckId,
