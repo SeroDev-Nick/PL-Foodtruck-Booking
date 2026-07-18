@@ -1,11 +1,12 @@
 import { format } from "date-fns";
-import type { BookingCategory } from "@/lib/categories";
+import type { StoredBookingCategory } from "@/lib/categories";
+import { isStoredBookingCategory } from "@/lib/categories";
 import type { DayBooking } from "@/lib/calendar/day-state";
 import { createClient } from "@/lib/supabase/client";
 
 type BookingRow = {
   id: string;
-  category: BookingCategory;
+  category: string;
   booking_date: string;
   truck_id: string | null;
 };
@@ -55,13 +56,16 @@ export async function fetchBookingsForRange(
 
   const bookingsByDate: Record<string, DayBooking[]> = {};
   for (const row of (bookingsResult.data ?? []) as BookingRow[]) {
+    if (!isStoredBookingCategory(row.category)) {
+      continue;
+    }
     const key = row.booking_date;
     if (!bookingsByDate[key]) {
       bookingsByDate[key] = [];
     }
     bookingsByDate[key].push({
       id: row.id,
-      category: row.category,
+      category: row.category as StoredBookingCategory,
       truckId: row.truck_id,
       businessName: row.truck_id ? (nameById.get(row.truck_id) ?? null) : null,
     });

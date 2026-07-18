@@ -5,7 +5,7 @@ import {
   type ManagerBookingRow,
 } from "@/components/dashboard/ManagerBookingHistory";
 import { requireManagerSession } from "@/lib/auth/require-manager";
-import { isBookingCategory } from "@/lib/categories";
+import { isStoredBookingCategory } from "@/lib/categories";
 import { todayIsoLocal } from "@/lib/dates/today";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -57,7 +57,7 @@ export default async function TruckBookingsPage({
   const { data: bookingRows, error: bookingsError } = await query;
 
   const bookings: ManagerBookingRow[] = (bookingRows ?? [])
-    .filter((row) => isBookingCategory(String(row.category)))
+    .filter((row) => isStoredBookingCategory(String(row.category)))
     .map((row) => {
       const bookingDate = row.booking_date as string;
       return {

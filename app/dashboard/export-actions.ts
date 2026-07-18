@@ -4,6 +4,7 @@ import { requireManagerSession } from "@/lib/auth/require-manager";
 import { buildCsv } from "@/lib/csv";
 import { todayIsoLocal } from "@/lib/dates/today";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { labelForCategory } from "@/lib/categories";
 
 export type CsvExportResult =
   | { ok: true; fileName: string; content: string }
@@ -113,7 +114,7 @@ export async function exportBookingsCsv(): Promise<CsvExportResult> {
       booking.booking_date,
       String(booking.start_time ?? "").slice(0, 5),
       String(booking.end_time ?? "").slice(0, 5),
-      booking.category,
+      labelForCategory(String(booking.category ?? "")),
       booking.notes ?? "",
       booking.no_show ? "Yes" : "No",
     ];
