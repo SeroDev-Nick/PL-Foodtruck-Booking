@@ -1,10 +1,10 @@
-import type { BookingCategory } from "@/lib/categories";
+import type { BookingCategory, StoredBookingCategory } from "@/lib/categories";
 
 export type DayState = "open" | "recommended" | "same_category" | "full";
 
 export type DayBooking = {
   id: string;
-  category: BookingCategory;
+  category: StoredBookingCategory;
   truckId?: string | null;
   businessName?: string | null;
 };

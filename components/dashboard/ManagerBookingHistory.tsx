@@ -16,14 +16,17 @@ import {
   cancelTruckBookings,
   markBookingNoShow,
 } from "@/app/dashboard/trucks/[truckId]/actions";
-import { CATEGORY_LABELS, type BookingCategory } from "@/lib/categories";
+import {
+  labelForCategory,
+  type StoredBookingCategory,
+} from "@/lib/categories";
 
 export type ManagerBookingRow = {
   id: string;
   bookingDate: string;
   startTime: string;
   endTime: string;
-  category: BookingCategory;
+  category: StoredBookingCategory;
   notes: string | null;
   noShow: boolean;
   /** True when booking_date >= today — Cancel action only. */
@@ -313,7 +316,7 @@ export function ManagerBookingHistory({
                     {formatTime(booking.endTime)}
                   </td>
                   <td className="px-2 py-3 text-[var(--page-fg)]">
-                    {CATEGORY_LABELS[booking.category]}
+                    {labelForCategory(booking.category)}
                   </td>
                   <td className="max-w-[14rem] px-2 py-3 text-[var(--page-muted)]">
                     {booking.notes?.trim() ? booking.notes : "—"}
