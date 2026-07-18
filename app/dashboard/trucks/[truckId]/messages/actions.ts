@@ -43,8 +43,9 @@ export async function markTruckMessagesRead(
     };
   }
 
+  // Invalidate the truck list so unread badges refresh on soft navigation back.
+  // Safe here because this runs as a Server Action, not during RSC render.
   revalidatePath("/dashboard");
-  revalidatePath(`/dashboard/trucks/${truckId}/messages`);
   return { ok: true };
 }
 

@@ -1,9 +1,9 @@
 import { notFound, redirect } from "next/navigation";
-import { markTruckMessagesRead } from "@/app/dashboard/trucks/[truckId]/messages/actions";
 import {
   ManagerMessageThread,
   type ManagerMessageRow,
 } from "@/components/dashboard/ManagerMessageThread";
+import { MarkTruckMessagesReadOnMount } from "@/components/dashboard/MarkTruckMessagesReadOnMount";
 import { requireManagerSession } from "@/lib/auth/require-manager";
 import { isMessageSubject } from "@/lib/messages/subjects";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -41,9 +41,6 @@ export default async function TruckMessagesPage({
     .eq("truck_id", truckId)
     .order("created_at", { ascending: false });
 
-  // Mark unread as read after loading so the UI can still show which were unread.
-  await markTruckMessagesRead(truckId);
-
   const messages: ManagerMessageRow[] = (messageRows ?? [])
     .filter((row) => isMessageSubject(String(row.subject)))
     .map((row) => ({
@@ -65,6 +62,8 @@ export default async function TruckMessagesPage({
           Could not load messages. Please refresh the page.
         </p>
       ) : null}
+      {/* Mark-read runs after mount as a Server Action — not during RSC render. */}
+      <MarkTruckMessagesReadOnMount truckId={truck.id as string} />
       <ManagerMessageThread
         truckId={truck.id as string}
         businessName={truck.business_name as string}
