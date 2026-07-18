@@ -12,6 +12,7 @@ import {
   useTransition,
 } from "react";
 import { submitBookings } from "@/app/book/actions";
+import { ContactManagerModal } from "@/components/ContactManagerModal";
 import { MonthCalendar } from "@/components/MonthCalendar";
 import {
   clearBookingDraft,
@@ -44,14 +45,6 @@ const buttonClassName =
 
 function subscribeToNothing() {
   return () => {};
-}
-
-function managerMailtoHref(): string | null {
-  const email = process.env.NEXT_PUBLIC_MANAGER_EMAIL?.trim();
-  if (!email) {
-    return null;
-  }
-  return `mailto:${email}`;
 }
 
 function useMatchingBookingDraft(category: BookingCategory) {
@@ -150,7 +143,7 @@ export function BookingFlow({
     () => Object.keys(selectedDays).sort(),
     [selectedDays],
   );
-  const managerHref = managerMailtoHref();
+  const [contactOpen, setContactOpen] = useState(false);
 
   const persistDraft = useCallback(
     (
@@ -526,16 +519,13 @@ export function BookingFlow({
           </p>
           <p className="text-sm text-[var(--page-muted)]">
             Already registered but don&apos;t see your name?{" "}
-            {managerHref ? (
-              <a
-                href={managerHref}
-                className="font-medium text-[var(--focus-ring)] underline-offset-2 hover:underline"
-              >
-                Contact the manager about your booking status
-              </a>
-            ) : (
-              <span>Contact the manager about your booking status</span>
-            )}
+            <button
+              type="button"
+              className="font-medium text-[var(--focus-ring)] underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={() => setContactOpen(true)}
+            >
+              Contact the manager about your booking status
+            </button>
             .
           </p>
 
@@ -647,6 +637,12 @@ export function BookingFlow({
           </button>
         </section>
       ) : null}
+
+      <ContactManagerModal
+        isOpen={contactOpen}
+        onClose={() => setContactOpen(false)}
+        initialTruckId={truckId}
+      />
     </div>
   );
 }
