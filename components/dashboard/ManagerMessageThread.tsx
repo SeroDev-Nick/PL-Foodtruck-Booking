@@ -123,7 +123,13 @@ function MessageCard({
   }
 
   return (
-    <article className="rounded-xl border border-[var(--control-border)] bg-[var(--control-bg)] p-4 sm:p-5">
+    <article
+      className={`rounded-xl border p-4 sm:p-5 ${
+        message.read
+          ? "border-[var(--control-border)] bg-[var(--control-bg)]"
+          : "border-[var(--day-same-border)] bg-[var(--day-same-bg)]"
+      }`}
+    >
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex flex-col gap-1">
@@ -132,11 +138,6 @@ function MessageCard({
             </h2>
             <p className="text-sm text-[var(--page-muted)]">
               {formatTimestamp(message.createdAt)}
-              {!message.read ? (
-                <span className="ml-2 inline-flex items-center rounded-full bg-[var(--error-bg)] px-2 py-0.5 text-xs font-medium text-[var(--error-fg)]">
-                  Was unread
-                </span>
-              ) : null}
             </p>
           </div>
           <a
