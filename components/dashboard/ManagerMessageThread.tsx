@@ -108,6 +108,9 @@ function MessageCard({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // Freeze the page-load unread snapshot. After mark-as-read, Next refreshes
+  // this route's RSC payload with read=true; that must not clear the highlight.
+  const [wasUnreadOnLoad] = useState(() => !message.read);
   const subjectLabel = MESSAGE_SUBJECT_LABELS[message.subject];
 
   function runAction(action: () => Promise<void>) {
@@ -125,9 +128,9 @@ function MessageCard({
   return (
     <article
       className={`rounded-xl border p-4 sm:p-5 ${
-        message.read
-          ? "border-[var(--control-border)] bg-[var(--control-bg)]"
-          : "border-[var(--day-same-border)] bg-[var(--day-same-bg)]"
+        wasUnreadOnLoad
+          ? "border-[var(--day-same-border)] bg-[var(--day-same-bg)]"
+          : "border-[var(--control-border)] bg-[var(--control-bg)]"
       }`}
     >
       <div className="flex flex-col gap-3">
